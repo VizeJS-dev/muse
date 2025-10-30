@@ -1,16 +1,11 @@
 import './App.css'
-import {ResizablePanel, ResizableHandle, ResizablePanelGroup } from "@/components/ui/resizable.tsx";
-
+import {SpotifyWidget} from "@/widgets/SpotifyWidget";
 function App() {
 
   return (
     <>
-        <div>
-            <ResizablePanelGroup direction="horizontal">
-                <ResizablePanel>One</ResizablePanel>
-                <ResizableHandle />
-                <ResizablePanel>Two</ResizablePanel>
-            </ResizablePanelGroup>
+        <div className="flex h-screen w-screen items-center justify-center bg-primary">
+            <SpotifyWidget/>
         </div>
     </>
   )
