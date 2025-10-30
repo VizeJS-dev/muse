@@ -20,7 +20,7 @@ export function SpotifyCallback() {
         if (code) {
             handleCallback(code)
                 .then(() => {
-                    navigate('/dashboard')
+                    navigate('/')
                 })
                 .catch((err) => {
                     console.error('Error handling callback:', err)

@@ -82,3 +82,55 @@ export const handleCallback = async (code: string) => {
 
     return data
 }
+
+export const refreshAccessToken = async () => {
+    const refreshToken = localStorage.getItem('refresh_token')
+
+    if (!refreshToken) {
+        throw new Error('No refresh token available')
+    }
+
+    const response = await fetch('https://accounts.spotify.com/api/token', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+            client_id: CLIENT_ID,
+            grant_type: 'refresh_token',
+            refresh_token: refreshToken,
+        }),
+    })
+
+    if (!response.ok) {
+        throw new Error('Failed to refresh token')
+    }
+
+    const data = await response.json()
+
+    // Update tokens
+    localStorage.setItem('access_token', data.access_token)
+    if (data.refresh_token) {
+        localStorage.setItem('refresh_token', data.refresh_token)
+    }
+    localStorage.setItem('expires_at', String(Date.now() + data.expires_in * 1000))
+
+    return data.access_token
+}
+
+// Automatically refresh token when needed
+export const getValidAccessToken = async () => {
+    const accessToken = localStorage.getItem('access_token')
+    const expiresAt = localStorage.getItem('expires_at')
+
+    if (!accessToken || !expiresAt) {
+        throw new Error('No access token available')
+    }
+
+    // Refresh if token expires in less than 5 minutes
+    if (Date.now() > parseInt(expiresAt) - 5 * 60 * 1000) {
+        return await refreshAccessToken()
+    }
+
+    return accessToken
+}
