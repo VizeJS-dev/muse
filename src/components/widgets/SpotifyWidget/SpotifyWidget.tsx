@@ -1,10 +1,10 @@
-
 import { useEffect, useState } from 'react'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable.tsx";
 import { getUserPlaylists, getPlaylist } from '@/services/spotify-api'
 import { Play, Pause, SkipBack, SkipForward, Volume2, Shuffle, Repeat } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
+import { Spinner } from '@/components/ui/spinner'
 
 interface Playlist {
     id: string
@@ -85,7 +85,7 @@ export const SpotifyWidget = () => {
     if (loading) {
         return (
             <div className="flex items-center justify-center h-screen">
-                <p className="text-foreground">Loading playlists...</p>
+                <Spinner className="h-8 w-8 text-primary" />
             </div>
         )
     }
@@ -140,7 +140,7 @@ export const SpotifyWidget = () => {
                             <div className="h-full overflow-y-auto p-4 bg-background">
                                 {loadingTracks ? (
                                     <div className="flex items-center justify-center h-full">
-                                        <p className="text-muted-foreground">Loading tracks...</p>
+                                        <Spinner className="h-8 w-8 text-primary" />
                                     </div>
                                 ) : selectedPlaylist ? (
                                     <div>
@@ -234,11 +234,11 @@ export const SpotifyWidget = () => {
 
                 {/* Player Controls Panel (Bottom) */}
                 <ResizablePanel defaultSize={15} minSize={10} maxSize={25}>
-                    <div className="h-full bg-card text-card-foreground border-t border-border flex flex-col">
+                    <div className="h-full bg-card text-card-foreground border-t border-border">
                         {currentTrack ? (
-                            <>
-                                {/* Now Playing Info */}
-                                <div className="flex items-center gap-4 p-4 border-b border-border">
+                            <div className="h-full flex items-center gap-4 px-4 py-3">
+                                {/* Album Art & Track Info */}
+                                <div className="flex items-center gap-3 min-w-0 flex-shrink-0" style={{ width: '15%' }}>
                                     {currentTrack.album.images[0] && (
                                         <img
                                             src={currentTrack.album.images[0].url}
@@ -247,19 +247,19 @@ export const SpotifyWidget = () => {
                                         />
                                     )}
                                     <div className="flex-1 min-w-0">
-                                        <p className="font-semibold truncate text-card-foreground">
+                                        <p className="font-semibold truncate text-card-foreground text-sm">
                                             {currentTrack.name}
                                         </p>
-                                        <p className="text-sm text-muted-foreground truncate">
+                                        <p className="text-xs text-muted-foreground truncate">
                                             {currentTrack.artists.map(a => a.name).join(', ')}
                                         </p>
                                     </div>
                                 </div>
 
-                                {/* Controls */}
-                                <div className="flex-1 flex flex-col justify-center px-4">
+                                {/* Center Controls */}
+                                <div className="flex-1 flex flex-col gap-2 items-center">
                                     {/* Playback Buttons */}
-                                    <div className="flex mt-3 items-center justify-center gap-2 mb-3">
+                                    <div className="flex items-center gap-2">
                                         <Button variant="ghost" size="icon" className="h-8 w-8">
                                             <Shuffle className="h-4 w-4" />
                                         </Button>
@@ -269,13 +269,13 @@ export const SpotifyWidget = () => {
                                         <Button
                                             variant="default"
                                             size="icon"
-                                            className="h-10 w-10"
+                                            className="h-9 w-9"
                                             onClick={togglePlayPause}
                                         >
                                             {isPlaying ? (
-                                                <Pause className="h-5 w-5" />
+                                                <Pause className="h-4 w-4" />
                                             ) : (
-                                                <Play className="h-5 w-5" />
+                                                <Play className="h-4 w-4" />
                                             )}
                                         </Button>
                                         <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -287,7 +287,7 @@ export const SpotifyWidget = () => {
                                     </div>
 
                                     {/* Progress Bar */}
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-2 w-full max-w-2xl">
                                         <span className="text-xs text-muted-foreground w-10 text-right">
                                             {formatDuration(progress)}
                                         </span>
@@ -305,20 +305,20 @@ export const SpotifyWidget = () => {
                                 </div>
 
                                 {/* Volume Control */}
-                                <div className="flex items-center gap-2 px-4 pb-4">
+                                <div className="flex items-center gap-2 flex-shrink-0" style={{ width: '15%' }}>
                                     <Volume2 className="h-4 w-4 text-muted-foreground" />
                                     <Slider
                                         value={[volume]}
                                         max={100}
                                         step={1}
                                         onValueChange={(value) => setVolume(value[0])}
-                                        className="w-24"
+                                        className="flex-1"
                                     />
-                                    <span className="text-xs text-muted-foreground w-8">
+                                    <span className="text-xs text-muted-foreground w-8 text-right">
                                         {volume}%
                                     </span>
                                 </div>
-                            </>
+                            </div>
                         ) : (
                             <div className="h-full flex items-center justify-center">
                                 <p className="text-muted-foreground text-sm">
