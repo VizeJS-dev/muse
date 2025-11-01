@@ -30,6 +30,7 @@ import type {
   Track,
   PlaylistDetails,
 } from "@/features/spotify/types";
+import { totalDurationMsFromTracks, formatPlaylistDuration } from "@/features/spotify/utils/duration";
 
 export const SpotifyWidget = () => {
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
@@ -176,23 +177,9 @@ export const SpotifyWidget = () => {
                         )}
                         <div className="text-sm text-muted-foreground">
                           {(() => {
-                            const totalMs =
-                              selectedPlaylist.tracks.items.reduce(
-                                (total, item) => total + item.track.duration_ms,
-                                0,
-                              );
-                            const hours = Math.floor(totalMs / 3600000);
-                            const minutes = Math.floor(
-                              (totalMs % 3600000) / 60000,
-                            );
-                            const seconds = Math.floor(
-                              (totalMs % 60000) / 1000,
-                            );
-
-                            const durationString =
-                              hours > 0
-                                ? `${hours}h ${minutes}min`
-                                : `${minutes}min ${seconds}sec`;
+                            const tracks = selectedPlaylist.tracks.items.map((i) => i.track);
+                            const totalMs = totalDurationMsFromTracks(tracks);
+                            const durationString = formatPlaylistDuration(totalMs);
 
                             return (
                               <p className="text-sm text-muted-foreground flex items-center gap-2">
