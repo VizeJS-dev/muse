@@ -21,7 +21,7 @@ interface SpotifyPlaylistsResponse {
 }
 
 // Fetch user's playlists
-export const getUserPlaylists = async (limit = 50): Promise<SpotifyPlaylist[]> => {
+export const getUserPlaylists = async (limit = 50): Promise<import('@/features/spotify/types').Playlist[]> => {
     const token = await getValidAccessToken()
 
     let allPlaylists: SpotifyPlaylist[] = []
@@ -43,11 +43,12 @@ export const getUserPlaylists = async (limit = 50): Promise<SpotifyPlaylist[]> =
         url = data.next || ''
     }
 
+    // Rely on structural typing: SpotifyPlaylist is compatible with our shared Playlist
     return allPlaylists
 }
 
 // Get specific playlist details
-export const getPlaylist = async (playlistId: string) => {
+export const getPlaylist = async (playlistId: string): Promise<import('@/features/spotify/types').PlaylistDetails> => {
     const token = await getValidAccessToken()
 
     const response = await fetch(

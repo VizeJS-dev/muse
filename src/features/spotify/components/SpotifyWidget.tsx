@@ -23,7 +23,7 @@ export const SpotifyWidget = () => {
     useEffect(() => {
         getUserPlaylists()
             .then(setPlaylists)
-            .catch((err) => setError(err.message))
+            .catch((err: unknown) => setError(err instanceof Error ? err.message : String(err)))
             .finally(() => setLoading(false))
     }, [])
 
@@ -80,7 +80,7 @@ export const SpotifyWidget = () => {
                         {/* Playlists Panel */}
                         <ResizablePanel defaultSize={40} minSize={30}>
                             <div className="h-full overflow-y-auto bg-background">
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+                                <div className="grid grid-cols-1 gap-4 p-4">
                                     {playlists.map((playlist) => (
                                         <PlaylistCard
                                             key={playlist.id}

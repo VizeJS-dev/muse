@@ -2,30 +2,36 @@ import React from 'react'
 import type {Playlist} from '@/features/spotify/types'
 
 interface PlaylistCardProps {
-  playlist: Playlist
-  selected?: boolean
-  onClick: () => void
+    playlist: Playlist
+    selected?: boolean
+    onClick: () => void
 }
 
-export const PlaylistCard: React.FC<PlaylistCardProps> = ({ playlist, selected, onClick }) => {
-  return (
-    <button
-      onClick={onClick}
-      className={`bg-card text-card-foreground p-4 rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors text-left border border-border ${
-        selected ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''
-      }`}
-    >
-      {playlist.images[0] && (
-        <img
-          src={playlist.images[0].url}
-          alt={playlist.name}
-          className="w-full aspect-square object-cover rounded-md mb-2"
-        />
-      )}
-      <h3 className="font-semibold truncate">{playlist.name}</h3>
-      <p className="text-sm text-muted-foreground">{playlist.tracks.total} tracks</p>
-    </button>
-  )
+export const PlaylistCard: React.FC<PlaylistCardProps> = ({playlist, selected, onClick}) => {
+    return (
+        <button
+            onClick={onClick}
+            className={`text-card-foreground p-2 rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors text-left ${
+                selected ? 'bg-accent' : ''
+            }`}
+        >
+            <div className="flex space-x-4">
+                {playlist.images[0] && (
+                    <img
+                        src={playlist.images[0].url}
+                        alt={playlist.name}
+                        className="w-16 h-16 object-cover rounded-md"
+                    />
+                )}
+                <div>
+                    <h3 className="font-semibold truncate">{playlist.name}</h3>
+                    <p className="text-sm text-muted-foreground">
+                        {`Playlist - ${playlist.owner.display_name}`}
+                    </p>
+                </div>
+            </div>
+        </button>
+    )
 }
 
 export default PlaylistCard

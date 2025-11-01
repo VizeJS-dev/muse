@@ -1,6 +1,14 @@
 export interface Playlist {
     id: string
     name: string
+    owner: {
+        display_name: string
+        id?: string
+        href?: string
+        type?: string
+        uri?: string
+        external_urls?: Record<string, string>
+    }
     images: { url: string }[]
     tracks: { total: number }
 }
