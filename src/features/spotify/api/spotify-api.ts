@@ -68,7 +68,7 @@ export const getPlaylist = async (playlistId: string): Promise<import('@/feature
 }
 
 // Get user profile
-export const getUserProfile = async () => {
+export const getUserProfile = async (): Promise<import('@/features/spotify/types').UserDetails> => {
     const token = await getValidAccessToken()
 
     const response = await fetch('https://api.spotify.com/v1/me', {
@@ -83,3 +83,20 @@ export const getUserProfile = async () => {
 
     return response.json()
 }
+
+export const getUserProfileById = async (userId: string): Promise<import('@/features/spotify/types').UserDetails> => {
+    const token = await getValidAccessToken()
+
+    const response = await fetch(`https://api.spotify.com/v1/users/${userId}`, {
+        headers: {
+            'Authorization': `Bearer ${token}`,
+        },
+    })
+
+    if (!response.ok) {
+        throw new Error('Failed to fetch user profile')
+    }
+
+    return response.json()
+}
+
