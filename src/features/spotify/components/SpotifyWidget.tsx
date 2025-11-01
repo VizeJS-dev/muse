@@ -8,6 +8,7 @@ import {
   getUserPlaylists,
   getPlaylist,
   getUserProfileById,
+  getAllPlaylistTracks,
 } from "@/features/spotify/api/spotify-api";
 import {
   Play,
@@ -65,7 +66,24 @@ export const SpotifyWidget = () => {
         // Continue without owner images - fallback will show
       }
 
-      setSelectedPlaylist(playlistDetails);
+      // Fetch all tracks with pagination (overcomes Spotify's 100-item limit)
+      try {
+        const allTracks = await getAllPlaylistTracks(playlistId);
+        const items = allTracks.map((t) => ({ track: t }));
+        const merged: PlaylistDetails = {
+          ...playlistDetails,
+          tracks: {
+            ...playlistDetails.tracks,
+            items,
+            total: allTracks.length,
+          },
+        };
+        setSelectedPlaylist(merged);
+      } catch (err) {
+        console.warn("Failed to load all tracks (showing first page only):", err);
+        // Fallback to the first page that came with playlistDetails
+        setSelectedPlaylist(playlistDetails);
+      }
     } catch (err) {
       console.error("Failed to load playlist:", err);
     } finally {

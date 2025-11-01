@@ -20,6 +20,12 @@ interface SpotifyPlaylistsResponse {
     next: string | null
 }
 
+interface SpotifyPlaylistTracksResponse {
+    items: { track: import('@/features/spotify/types').Track | null }[]
+    total: number
+    next: string | null
+}
+
 // Fetch user's playlists
 export const getUserPlaylists = async (limit = 50): Promise<import('@/features/spotify/types').Playlist[]> => {
     const token = await getValidAccessToken()
@@ -65,6 +71,35 @@ export const getPlaylist = async (playlistId: string): Promise<import('@/feature
     }
 
     return response.json()
+}
+
+// Get all tracks for a playlist (handles Spotify paging >100)
+export const getAllPlaylistTracks = async (playlistId: string, pageLimit = 100): Promise<import('@/features/spotify/types').Track[]> => {
+    const token = await getValidAccessToken()
+
+    let allTracks: import('@/features/spotify/types').Track[] = []
+    let url = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=${pageLimit}`
+
+    while (url) {
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+            },
+        })
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch playlist tracks')
+        }
+
+        const data: SpotifyPlaylistTracksResponse = await response.json()
+        const pageTracks = data.items
+            .map(i => i.track)
+            .filter((t): t is import('@/features/spotify/types').Track => Boolean(t))
+        allTracks = [...allTracks, ...pageTracks]
+        url = data.next || ''
+    }
+
+    return allTracks
 }
 
 // Get user profile
