@@ -1,5 +1,5 @@
 import './App.css'
-import {SpotifyWidget} from "@/components/widgets/SpotifyWidget/SpotifyWidget.tsx";
+import {SpotifyWidget} from "@/features/spotify/components/SpotifyWidget.tsx";
 import {BrowserRouter as Router, Routes, Route} from 'react-router-dom';
 import {SpotifyCallback} from "@/components/callback/SpotifyCallback.tsx";
 import {ThemeToggle} from "@/components/ThemeToggle.tsx";

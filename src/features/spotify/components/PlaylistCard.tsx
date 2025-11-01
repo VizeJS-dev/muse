@@ -1,5 +1,5 @@
 import React from 'react'
-import { Playlist } from './types'
+import type {Playlist} from '@/features/spotify/types'
 
 interface PlaylistCardProps {
   playlist: Playlist

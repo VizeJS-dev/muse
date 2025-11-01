@@ -1,5 +1,5 @@
 import React from 'react'
-import { Track } from './types'
+import type { Track } from '@/features/spotify/types'
 
 interface TrackRowProps {
   track: Track

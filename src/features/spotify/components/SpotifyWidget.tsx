@@ -1,14 +1,13 @@
 import { useEffect, useState } from 'react'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable.tsx";
-import { getUserPlaylists, getPlaylist } from '@/services/spotify-api'
+import { getUserPlaylists, getPlaylist } from '@/features/spotify/api/spotify-api'
 import { Play, Pause, SkipBack, SkipForward, Volume2, Shuffle, Repeat } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
 import { Spinner } from '@/components/ui/spinner'
 import { PlaylistCard } from './PlaylistCard'
 import { TrackRow } from './TrackRow'
-import { Playlist, Track, PlaylistDetails } from './types'
-
+import type { Playlist, Track, PlaylistDetails } from '@/features/spotify/types'
 
 export const SpotifyWidget = () => {
     const [playlists, setPlaylists] = useState<Playlist[]>([])

@@ -1,6 +1,6 @@
-// src/services/spotify-api.ts
+// src/features/spotify/api/spotify-api.ts
 
-import { getValidAccessToken } from './spotify-auth'
+import { getValidAccessToken } from '@/services/spotify-auth'
 
 interface SpotifyPlaylist {
     id: string
