@@ -39,3 +39,9 @@ export interface PlaylistDetails {
         }[]
     }
 }
+
+export interface UserDetails {
+    id: string
+    display_name: string
+    images: { url: string }[]
+}

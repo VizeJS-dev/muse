@@ -105,7 +105,7 @@ export const SpotifyWidget = () => {
                                 ) : selectedPlaylist ? (
                                     <div>
                                         {/* Playlist Header */}
-                                        <div className="mb-6 flex gap-4 items-start p-4 bg-card rounded-lg border border-border">
+                                        <div className="mb-6 flex gap-4 items-start p-4 rounded-lg">
                                             {selectedPlaylist.images[0] && (
                                                 <img
                                                     src={selectedPlaylist.images[0].url}
