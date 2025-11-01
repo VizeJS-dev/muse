@@ -46,6 +46,27 @@ export interface PlaylistDetails {
   };
 }
 
+export interface Album {
+  id: string;
+  name: string;
+  images: { url: string }[];
+  artists: { name: string }[];
+  total_tracks?: number;
+}
+
+export interface AlbumDetails {
+  id: string;
+  name: string;
+  images: { url: string }[];
+  artists: { name: string }[];
+  tracks: {
+    total: number;
+    items: {
+      track: Track;
+    }[];
+  };
+}
+
 export interface UserDetails {
   id: string;
   display_name: string;

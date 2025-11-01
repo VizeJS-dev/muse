@@ -9,6 +9,9 @@ import {
   getPlaylist,
   getUserProfileById,
   getAllPlaylistTracks,
+  getUserSavedAlbums,
+  getAlbum,
+  getAllAlbumTracks,
 } from "@/features/spotify/api/spotify-api";
 import {
   Play,
@@ -24,18 +27,29 @@ import { Slider } from "@/components/ui/slider";
 import { Spinner } from "@/components/ui/spinner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PlaylistCard } from "./PlaylistCard";
+import { AlbumCard } from "./AlbumCard";
 import { TrackRow } from "./TrackRow";
 import type {
   Playlist,
   Track,
   PlaylistDetails,
+  Album,
+  AlbumDetails,
 } from "@/features/spotify/types";
-import { totalDurationMsFromTracks, formatPlaylistDuration } from "@/features/spotify/utils/duration";
+import {
+  totalDurationMsFromTracks,
+  formatPlaylistDuration,
+} from "@/features/spotify/utils/duration";
 
 export const SpotifyWidget = () => {
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
+  const [albums, setAlbums] = useState<Album[]>([]);
+  const [activeTab, setActiveTab] = useState<"playlists" | "albums">(
+    "playlists",
+  );
   const [selectedPlaylist, setSelectedPlaylist] =
     useState<PlaylistDetails | null>(null);
+  const [selectedAlbum, setSelectedAlbum] = useState<AlbumDetails | null>(null);
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -45,8 +59,20 @@ export const SpotifyWidget = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    getUserPlaylists()
-      .then(setPlaylists)
+    Promise.allSettled([getUserPlaylists(), getUserSavedAlbums()])
+      .then((results) => {
+        const [pl, al] = results;
+        if (pl.status === "fulfilled") setPlaylists(pl.value);
+        if (al.status === "fulfilled") setAlbums(al.value);
+        if (pl.status === "rejected" && al.status === "rejected") {
+          const e1 = (pl as PromiseRejectedResult).reason;
+          const e2 = (al as PromiseRejectedResult).reason;
+          setError(
+            (e1 instanceof Error ? e1.message : String(e1)) ||
+              (e2 instanceof Error ? e2.message : String(e2)),
+          );
+        }
+      })
       .catch((err: unknown) =>
         setError(err instanceof Error ? err.message : String(err)),
       )
@@ -54,6 +80,9 @@ export const SpotifyWidget = () => {
   }, []);
 
   const handlePlaylistClick = async (playlistId: string) => {
+    setActiveTab("playlists");
+    setSelectedAlbum(null);
+    setCurrentTrack(null);
     setLoadingTracks(true);
     try {
       const playlistDetails = await getPlaylist(playlistId);
@@ -81,12 +110,70 @@ export const SpotifyWidget = () => {
         };
         setSelectedPlaylist(merged);
       } catch (err) {
-        console.warn("Failed to load all tracks (showing first page only):", err);
+        console.warn(
+          "Failed to load all tracks (showing first page only):",
+          err,
+        );
         // Fallback to the first page that came with playlistDetails
         setSelectedPlaylist(playlistDetails);
       }
     } catch (err) {
       console.error("Failed to load playlist:", err);
+    } finally {
+      setLoadingTracks(false);
+    }
+  };
+
+  const handleAlbumClick = async (albumId: string) => {
+    setActiveTab("albums");
+    setSelectedPlaylist(null);
+    setCurrentTrack(null);
+    setLoadingTracks(true);
+    try {
+      const albumDetails = await getAlbum(albumId);
+      try {
+        const allTracks = await getAllAlbumTracks(albumId);
+        const items = allTracks.map((t) => ({ track: t }));
+        const merged: AlbumDetails = {
+          ...albumDetails,
+          tracks: {
+            total: allTracks.length,
+            items,
+          },
+        };
+        setSelectedAlbum(merged);
+      } catch (err) {
+        console.warn(
+          "Failed to load all album tracks (showing first page)",
+          err,
+        );
+        // albumDetails.tracks.items from API are track objects, normalize best-effort
+        const normalized: AlbumDetails = {
+          ...albumDetails,
+          tracks: {
+            total: (albumDetails as any).tracks?.total ?? 0,
+            items: ((albumDetails as any).tracks?.items ?? []).map(
+              (t: any) => ({
+                track: {
+                  id: t.id,
+                  name: t.name,
+                  duration_ms: t.duration_ms ?? 0,
+                  artists: (t.artists ?? []).map((a: any) => ({
+                    name: a.name,
+                  })),
+                  album: {
+                    name: albumDetails.name,
+                    images: albumDetails.images ?? [],
+                  },
+                },
+              }),
+            ),
+          },
+        };
+        setSelectedAlbum(normalized);
+      }
+    } catch (err) {
+      console.error("Failed to load album:", err);
     } finally {
       setLoadingTracks(false);
     }
@@ -130,18 +217,41 @@ export const SpotifyWidget = () => {
         {/* Main Content Area (Horizontal Split) */}
         <ResizablePanel defaultSize={85} minSize={50}>
           <ResizablePanelGroup direction="horizontal">
-            {/* Playlists Panel */}
+            {/* Collections Panel (Playlists/Albums) */}
             <ResizablePanel defaultSize={40} minSize={30}>
               <div className="h-full overflow-y-auto bg-background">
-                <div className="grid grid-cols-1 gap-4 p-4">
-                  {playlists.map((playlist) => (
-                    <PlaylistCard
-                      key={playlist.id}
-                      playlist={playlist}
-                      selected={selectedPlaylist?.id === playlist.id}
-                      onClick={() => handlePlaylistClick(playlist.id)}
-                    />
-                  ))}
+                <div className="p-4 pb-2 flex gap-2">
+                  <button
+                    className={`px-3 py-1 rounded-md text-sm border ${activeTab === "playlists" ? "bg-accent text-accent-foreground border-transparent" : "bg-transparent text-foreground border-border"}`}
+                    onClick={() => setActiveTab("playlists")}
+                  >
+                    Playlists
+                  </button>
+                  <button
+                    className={`px-3 py-1 rounded-md text-sm border ${activeTab === "albums" ? "bg-accent text-accent-foreground border-transparent" : "bg-transparent text-foreground border-border"}`}
+                    onClick={() => setActiveTab("albums")}
+                  >
+                    Albums
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 gap-4 p-4 pt-2">
+                  {activeTab === "playlists"
+                    ? playlists.map((playlist) => (
+                        <PlaylistCard
+                          key={playlist.id}
+                          playlist={playlist}
+                          selected={selectedPlaylist?.id === playlist.id}
+                          onClick={() => handlePlaylistClick(playlist.id)}
+                        />
+                      ))
+                    : albums.map((album) => (
+                        <AlbumCard
+                          key={album.id}
+                          album={album}
+                          selected={selectedAlbum?.id === album.id}
+                          onClick={() => handleAlbumClick(album.id)}
+                        />
+                      ))}
                 </div>
               </div>
             </ResizablePanel>
@@ -177,9 +287,12 @@ export const SpotifyWidget = () => {
                         )}
                         <div className="text-sm text-muted-foreground">
                           {(() => {
-                            const tracks = selectedPlaylist.tracks.items.map((i) => i.track);
+                            const tracks = selectedPlaylist.tracks.items.map(
+                              (i) => i.track,
+                            );
                             const totalMs = totalDurationMsFromTracks(tracks);
-                            const durationString = formatPlaylistDuration(totalMs);
+                            const durationString =
+                              formatPlaylistDuration(totalMs);
 
                             return (
                               <p className="text-sm text-muted-foreground flex items-center gap-2">
@@ -193,7 +306,7 @@ export const SpotifyWidget = () => {
                                     {selectedPlaylist.owner.display_name[0]}
                                   </AvatarFallback>
                                 </Avatar>
-                                <span>
+                                <span className="flex items-center">
                                   {selectedPlaylist.owner.display_name} •{" "}
                                   {selectedPlaylist.tracks.total} tracks,{" "}
                                   {durationString}
@@ -223,10 +336,76 @@ export const SpotifyWidget = () => {
                       })}
                     </div>
                   </div>
+                ) : selectedAlbum ? (
+                  <div>
+                    {/* Album Header */}
+                    <div className="mb-6 flex gap-4 items-start p-4 rounded-lg">
+                      {selectedAlbum.images[0] && (
+                        <img
+                          src={selectedAlbum.images[0].url}
+                          alt={selectedAlbum.name}
+                          className="w-32 h-32 object-cover rounded-md border border-border"
+                        />
+                      )}
+                      <div className="flex-1">
+                        <h2 className="text-2xl font-bold mb-2 text-card-foreground">
+                          {selectedAlbum.name}
+                        </h2>
+                        <div className="text-sm text-muted-foreground">
+                          {(() => {
+                            const tracks = selectedAlbum.tracks.items.map(
+                              (i) => i.track,
+                            );
+                            const totalMs = totalDurationMsFromTracks(tracks);
+                            const durationString =
+                              formatPlaylistDuration(totalMs);
+                            const artists = (selectedAlbum.artists || [])
+                              .map((a) => a.name)
+                              .join(", ");
+                            return (
+                              <p className="text-sm text-muted-foreground flex items-center gap-2">
+                                <Avatar className="h-6 w-6">
+                                  <AvatarImage
+                                    src={selectedAlbum.images?.[0]?.url}
+                                  />
+                                  <AvatarFallback>
+                                    {selectedAlbum.name[0]}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <span className="flex items-center">
+                                  {artists} • {selectedAlbum.tracks.total}{" "}
+                                  tracks, {durationString}
+                                </span>
+                              </p>
+                            );
+                          })()}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Track List */}
+                    <div className="space-y-1">
+                      {selectedAlbum.tracks.items.map((item, index) => {
+                        const track = item.track;
+                        const isCurrentTrack = currentTrack?.id === track.id;
+                        return (
+                          <TrackRow
+                            key={`${track.id}-${index}`}
+                            track={track}
+                            index={index}
+                            isCurrent={isCurrentTrack}
+                            isPlaying={isPlaying}
+                            onClick={() => handleTrackClick(track)}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
                 ) : (
                   <div className="flex items-center justify-center h-full">
                     <p className="text-muted-foreground">
-                      Select a playlist to view tracks
+                      Select a {activeTab === "albums" ? "album" : "playlist"}{" "}
+                      to view tracks
                     </p>
                   </div>
                 )}

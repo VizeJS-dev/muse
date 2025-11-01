@@ -26,6 +26,29 @@ interface SpotifyPlaylistTracksResponse {
     next: string | null
 }
 
+interface SpotifySavedAlbumsResponse {
+    items: { album: {
+        id: string
+        name: string
+        images: { url: string }[]
+        artists: { name: string }[]
+        total_tracks?: number
+    } }[]
+    total: number
+    next: string | null
+}
+
+interface SpotifyAlbumTracksResponse {
+    items: {
+        id: string
+        name: string
+        artists: { name: string }[]
+        duration_ms: number
+    }[]
+    total: number
+    next: string | null
+}
+
 // Fetch user's playlists
 export const getUserPlaylists = async (limit = 50): Promise<import('@/features/spotify/types').Playlist[]> => {
     const token = await getValidAccessToken()
@@ -100,6 +123,94 @@ export const getAllPlaylistTracks = async (playlistId: string, pageLimit = 100):
     }
 
     return allTracks
+}
+
+// Get all tracks for an album (handles paging) and maps to our Track with album images/name
+export const getAllAlbumTracks = async (albumId: string, pageLimit = 50): Promise<import('@/features/spotify/types').Track[]> => {
+    const token = await getValidAccessToken()
+
+    // Fetch album details to enrich tracks with album images/name
+    const albumRes = await fetch(`https://api.spotify.com/v1/albums/${albumId}`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+    })
+    if (!albumRes.ok) {
+        throw new Error('Failed to fetch album details')
+    }
+    const albumJson: { name: string; images: { url: string }[]; tracks: SpotifyAlbumTracksResponse } = await albumRes.json()
+
+    // First page of tracks comes within albumJson.tracks
+    let allTracks: import('@/features/spotify/types').Track[] = albumJson.tracks.items.map((t) => ({
+        id: t.id,
+        name: t.name,
+        artists: t.artists.map(a => ({ name: a.name })),
+        duration_ms: (t as any).duration_ms ?? 0,
+        album: {
+            name: albumJson.name,
+            images: albumJson.images ?? [],
+        },
+    }))
+
+    // Continue with pagination if next exists
+    let url = albumJson.tracks.next ? albumJson.tracks.next.replace(/limit=\d+/, `limit=${pageLimit}`) : ''
+    while (url) {
+        const response = await fetch(url, {
+            headers: { 'Authorization': `Bearer ${token}` },
+        })
+        if (!response.ok) {
+            throw new Error('Failed to fetch album tracks')
+        }
+        const data: SpotifyAlbumTracksResponse = await response.json()
+        const page = data.items.map((t) => ({
+            id: t.id,
+            name: t.name,
+            artists: t.artists.map(a => ({ name: a.name })),
+            duration_ms: (t as any).duration_ms ?? 0,
+            album: {
+                name: albumJson.name,
+                images: albumJson.images ?? [],
+            },
+        })) as import('@/features/spotify/types').Track[]
+        allTracks = [...allTracks, ...page]
+        url = data.next || ''
+    }
+
+    return allTracks
+}
+
+// Get user's saved albums
+export const getUserSavedAlbums = async (limit = 50): Promise<import('@/features/spotify/types').Album[]> => {
+    const token = await getValidAccessToken()
+
+    let allAlbums: { id: string; name: string; images: { url: string }[]; artists: { name: string }[]; total_tracks?: number }[] = []
+    let url = `https://api.spotify.com/v1/me/albums?limit=${limit}`
+
+    while (url) {
+        const response = await fetch(url, {
+            headers: { 'Authorization': `Bearer ${token}` },
+        })
+        if (!response.ok) {
+            throw new Error('Failed to fetch saved albums')
+        }
+        const data: SpotifySavedAlbumsResponse = await response.json()
+        const page = data.items.map(i => i.album)
+        allAlbums = [...allAlbums, ...page]
+        url = data.next || ''
+    }
+
+    return allAlbums as unknown as import('@/features/spotify/types').Album[]
+}
+
+// Get specific album details
+export const getAlbum = async (albumId: string): Promise<import('@/features/spotify/types').AlbumDetails> => {
+    const token = await getValidAccessToken()
+
+    const response = await fetch(`https://api.spotify.com/v1/albums/${albumId}`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+    })
+    if (!response.ok) {
+        throw new Error('Failed to fetch album')
+    }
+    return response.json()
 }
 
 // Get user profile
