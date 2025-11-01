@@ -5,36 +5,10 @@ import { Play, Pause, SkipBack, SkipForward, Volume2, Shuffle, Repeat } from 'lu
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
 import { Spinner } from '@/components/ui/spinner'
+import { PlaylistCard } from './PlaylistCard'
+import { TrackRow } from './TrackRow'
+import { Playlist, Track, PlaylistDetails } from './types'
 
-interface Playlist {
-    id: string
-    name: string
-    images: { url: string }[]
-    tracks: { total: number }
-}
-
-interface Track {
-    id: string
-    name: string
-    artists: { name: string }[]
-    album: {
-        name: string
-        images: { url: string }[]
-    }
-    duration_ms: number
-}
-
-interface PlaylistDetails {
-    id: string
-    name: string
-    description: string
-    images: { url: string }[]
-    tracks: {
-        items: {
-            track: Track
-        }[]
-    }
-}
 
 export const SpotifyWidget = () => {
     const [playlists, setPlaylists] = useState<Playlist[]>([])
@@ -109,25 +83,12 @@ export const SpotifyWidget = () => {
                             <div className="h-full overflow-y-auto bg-background">
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
                                     {playlists.map((playlist) => (
-                                        <button
+                                        <PlaylistCard
                                             key={playlist.id}
+                                            playlist={playlist}
+                                            selected={selectedPlaylist?.id === playlist.id}
                                             onClick={() => handlePlaylistClick(playlist.id)}
-                                            className={`bg-card text-card-foreground p-4 rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors text-left border border-border ${
-                                                selectedPlaylist?.id === playlist.id ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''
-                                            }`}
-                                        >
-                                            {playlist.images[0] && (
-                                                <img
-                                                    src={playlist.images[0].url}
-                                                    alt={playlist.name}
-                                                    className="w-full aspect-square object-cover rounded-md mb-2"
-                                                />
-                                            )}
-                                            <h3 className="font-semibold truncate">{playlist.name}</h3>
-                                            <p className="text-sm text-muted-foreground">
-                                                {playlist.tracks.total} tracks
-                                            </p>
-                                        </button>
+                                        />
                                     ))}
                                 </div>
                             </div>
@@ -174,46 +135,14 @@ export const SpotifyWidget = () => {
                                                 const track = item.track
                                                 const isCurrentTrack = currentTrack?.id === track.id
                                                 return (
-                                                    <button
+                                                    <TrackRow
                                                         key={`${track.id}-${index}`}
+                                                        track={track}
+                                                        index={index}
+                                                        isCurrent={isCurrentTrack}
+                                                        isPlaying={isPlaying}
                                                         onClick={() => handleTrackClick(track)}
-                                                        className={`w-full flex items-center gap-3 p-3 rounded-lg transition-colors ${
-                                                            isCurrentTrack
-                                                                ? 'bg-accent text-accent-foreground'
-                                                                : 'hover:bg-muted text-foreground'
-                                                        }`}
-                                                    >
-                                                        {/* Track Number */}
-                                                        <span className="text-sm text-muted-foreground w-6">
-                                                            {isCurrentTrack && isPlaying ? '♪' : index + 1}
-                                                        </span>
-
-                                                        {/* Album Art */}
-                                                        {track.album.images[0] && (
-                                                            <img
-                                                                src={track.album.images[0].url}
-                                                                alt={track.album.name}
-                                                                className="w-10 h-10 rounded border border-border"
-                                                            />
-                                                        )}
-
-                                                        {/* Track Info */}
-                                                        <div className="flex-1 min-w-0 text-left">
-                                                            <p className={`font-medium truncate ${
-                                                                isCurrentTrack ? 'text-primary' : ''
-                                                            }`}>
-                                                                {track.name}
-                                                            </p>
-                                                            <p className="text-sm text-muted-foreground truncate">
-                                                                {track.artists.map(a => a.name).join(', ')}
-                                                            </p>
-                                                        </div>
-
-                                                        {/* Duration */}
-                                                        <span className="text-sm text-muted-foreground">
-                                                            {formatDuration(track.duration_ms)}
-                                                        </span>
-                                                    </button>
+                                                    />
                                                 )
                                             })}
                                         </div>
