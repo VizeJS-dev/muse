@@ -123,7 +123,18 @@ export const SpotifyWidget = () => {
                                                     </p>
                                                 )}
                                                 <p className="text-sm text-muted-foreground">
-                                                    {selectedPlaylist.tracks.items.length} tracks
+                                                    {(() => {
+                                                        const totalMs = selectedPlaylist.tracks.items.reduce((total, item) => total + item.track.duration_ms, 0);
+                                                        const hours = Math.floor(totalMs / 3600000);
+                                                        const minutes = Math.floor((totalMs % 3600000) / 60000);
+                                                        const seconds = Math.floor((totalMs % 60000) / 1000);
+                                                
+                                                        const durationString = hours > 0 
+                                                            ? `${hours}h ${minutes}min`
+                                                            : `${minutes}min ${seconds}sec`;
+                                                
+                                                        return `${selectedPlaylist.owner.display_name} • ${selectedPlaylist.tracks.total} tracks, ${durationString}`;
+                                                    })()}
                                                 </p>
                                             </div>
                                         </div>

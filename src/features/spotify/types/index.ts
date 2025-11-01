@@ -25,11 +25,15 @@ export interface Track {
 }
 
 export interface PlaylistDetails {
+    owner: {
+        display_name: string
+    }
     id: string
     name: string
     description: string
     images: { url: string }[]
     tracks: {
+        total:  number
         items: {
             track: Track
         }[]
